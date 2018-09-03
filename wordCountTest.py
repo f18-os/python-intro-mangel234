@@ -16,7 +16,7 @@ inputFname = sys.argv[3]
 
 #first check to make sure program exists
 if not os.path.exists("token_Count.py"):
-    print ("wordCount.py doesn't exist! Exiting")
+    #print ("wordCount.py doesn't exist! Exiting")
     exit()
 
 #make sure text files exist
