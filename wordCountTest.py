@@ -15,7 +15,7 @@ outputFname = sys.argv[2]
 inputFname = sys.argv[3]
 
 #first check to make sure program exists
-if not os.path.exists("wordCount.py"):
+if not os.path.exists("token_Count.py"):
     print ("wordCount.py doesn't exist! Exiting")
     exit()
 
