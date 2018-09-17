@@ -1,2 +1,5 @@
 # python-intro-mangel234
-python-intro-mangel234 created by GitHub Classroom
+OS Lab's 
+
+1. Tokenizer
+2. Shell Lab
