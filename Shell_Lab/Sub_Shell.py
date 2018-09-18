@@ -17,6 +17,17 @@ while next_input[0] != 'exit':
     # print('Input[0] -> ' + next_input[0])
     # print('Arguments ' + str(args))
     pid = os.getpid()  # get and remember pid
+
+    for i in range(len(args)):
+        if args[i] == 'cd':
+            # get location of directory
+            directory = os.getcwd()
+            # print(directory)
+            directory = directory.split("/")
+            # change directory
+            os.chdir(next_input[i+1])
+
+    # Dont fork if not using cd
     rc = os.fork()
 
     temp = ""
@@ -29,7 +40,7 @@ while next_input[0] != 'exit':
                 sys.stdout = open(temp, 'w')
                 fd = sys.stdout.fileno()
                 os.set_inheritable(fd, True)
-            # grab everything that you have besides the '>'
+                # grab everything that you have besides the '>'
                 args = args[:i]
 
             # Grabbing input redirect
@@ -37,7 +48,7 @@ while next_input[0] != 'exit':
                 temp = args[i + 1]
                 os.close(0)
                 # Use stdin now to do the opposite
-                sys.stdin= open(temp, 'r')
+                sys.stdin = open(temp, 'r')
                 fd = sys.stdin.fileno(fd, True)
                 os.set_inheritable(fd, True)
                 args = args[:i]
