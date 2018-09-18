@@ -22,14 +22,26 @@ while next_input[0] != 'exit':
     temp = ""
     try:
         for i in range(len(args)):
+            # Grabbing  output redirect
             if args[i] == '>':
                 temp = args[i + 1]
                 os.close(1)
                 sys.stdout = open(temp, 'w')
                 fd = sys.stdout.fileno()
                 os.set_inheritable(fd, True)
-                # grab everything that you have besides the '>'
+            # grab everything that you have besides the '>'
                 args = args[:i]
+
+            # Grabbing input redirect
+            if args[i] == '<':
+                temp = args[i + 1]
+                os.close(0)
+                # Use stdin now to do the opposite
+                sys.stdin= open(temp, 'r')
+                fd = sys.stdin.fileno(fd, True)
+                os.set_inheritable(fd, True)
+                args = args[:i]
+                # grab everything that you have besides the '>'
 
     except IndexError as err:
         pass
