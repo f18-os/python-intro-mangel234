@@ -9,8 +9,8 @@ next_input = ["null"]
 # print('[Sub@Wolvez]$\n')
 
 while next_input[0] != 'exit':
-    print('[Sub@Wolvez]$')
-    next_input = input().split()
+    # print('[Sub@Wolvez]$')
+    next_input = input('[Sub@Wolvez]$ ').split()
     args = next_input  # Grab all the arguments
     # Debugging
     # Keep on asking for user arguments
@@ -18,6 +18,7 @@ while next_input[0] != 'exit':
     # print('Arguments ' + str(args))
     pid = os.getpid()  # get and remember pid
 
+    # Handle cd
     for i in range(len(args)):
         if args[i] == 'cd':
             # get location of directory
@@ -49,7 +50,7 @@ while next_input[0] != 'exit':
                 os.close(0)
                 # Use stdin now to do the opposite
                 sys.stdin = open(temp, 'r')
-                fd = sys.stdin.fileno(fd, True)
+                fd = sys.stdin.fileno()
                 os.set_inheritable(fd, True)
                 args = args[:i]
                 # grab everything that you have besides the '>'
