@@ -9,7 +9,7 @@ pid = os.getpid()  # get and remember pid
 # Flag to check if we are in a pip argument
 pipeCharacter = False
 # sos.environ.get()
-
+sleeping = False
 if 'PS1' in os.environ:
     ps1 = os.environ('PS1')
 else:
@@ -58,6 +58,10 @@ while next_input[0] != 'exit':
                 # grab everything that you have besides the '>'
             if args[i] == '|':
                 pipeCharacter = True
+                args = args[:i]
+            if args[i] == '&':
+                sleeping = True
+                args = args[:i]
 
     except IndexError as err:
         pass
@@ -78,9 +82,12 @@ while next_input[0] != 'exit':
                 os.execve(program, args, os.environ)  # try to exec program
             except FileNotFoundError:  # ...expected
                 pass  # ...fail quietly
+    else:
+        if sleeping:
+            childPidCode = os.wait()
 
         # os.write(2, ("Child:    Error: Could not exec %s\n" % args[0]).encode())
-        sys.exit(1)  # terminate with error
+        # sys.exit(1)  # terminate with error
 
         # This handles the piping below
     if pipeCharacter:
@@ -110,10 +117,10 @@ while next_input[0] != 'exit':
                     for fd in (pr, pw):
                         os.close(fd)
                         for dir in re.split(":", os.environ['PATH']):  # try each directory in path
-                            program = "%s/%s" % (dir, next_input[0])
+                            program = "%s/%s" % (dir, firstPart)
                             # print(str(program))
                             try:
-                                os.execve(program, args, os.environ) # try to exec program
+                                os.execve(program, args, os.environ)  # try to exec program
                             except FileNotFoundError:  # ...expected
                                 pass  # ...fail quietly
 
@@ -124,5 +131,5 @@ while next_input[0] != 'exit':
                     os.dup(pr)
                     for fd in (pw, pr):
                         os.close(fd)
-                    for line in fileinput.input():
-                        print("From child: <%s>" + str(line))
+                # for line in fileinput.input():
+                # print("From child: <%s>" + str(line))
