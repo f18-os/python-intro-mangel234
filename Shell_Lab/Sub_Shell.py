@@ -1,22 +1,24 @@
 #! /usr/bin/env python3
 # Modified by Miguel Nunez
 # Date: Sep 16, 2018
+import fileinput
 import os, sys, time, re
 
-# os.write(1, ("About to fork (pid=%d)\n" % pid).encode())
 next_input = ["null"]
+pid = os.getpid()  # get and remember pid
+# Flag to check if we are in a pip argument
+pipeCharacter = False
+# sos.environ.get()
 
-# print('[Sub@Wolvez]$\n')
+if 'PS1' in os.environ:
+    ps1 = os.environ('PS1')
+else:
+    ps1 = "[Sub@Wolvez]$ "
 
 while next_input[0] != 'exit':
-    # print('[Sub@Wolvez]$')
-    next_input = input('[Sub@Wolvez]$ ').split()
+
+    next_input = input(ps1).split()
     args = next_input  # Grab all the arguments
-    # Debugging
-    # Keep on asking for user arguments
-    # print('Input[0] -> ' + next_input[0])
-    # print('Arguments ' + str(args))
-    pid = os.getpid()  # get and remember pid
 
     # Handle cd
     for i in range(len(args)):
@@ -26,11 +28,11 @@ while next_input[0] != 'exit':
             # print(directory)
             directory = directory.split("/")
             # change directory
-            os.chdir(next_input[i+1])
+            os.chdir(next_input[i + 1])
 
     # Dont fork if not using cd
     rc = os.fork()
-
+    # Handle  redirections
     temp = ""
     try:
         for i in range(len(args)):
@@ -54,6 +56,8 @@ while next_input[0] != 'exit':
                 os.set_inheritable(fd, True)
                 args = args[:i]
                 # grab everything that you have besides the '>'
+            if args[i] == '|':
+                pipeCharacter = True
 
     except IndexError as err:
         pass
@@ -78,9 +82,47 @@ while next_input[0] != 'exit':
         # os.write(2, ("Child:    Error: Could not exec %s\n" % args[0]).encode())
         sys.exit(1)  # terminate with error
 
-    # else:  # parent (forked ok)
-    # os.write(1, ("Parent: My pid=%d.  Child's pid=%d\n" %
-    #   (pid, rc)).encode())
-    # childPidCode = os.wait()
-    # os.write(1, ("Parent: Child %d terminated with exit code %d\n" %
-    #   childPidCode).encode())
+        # This handles the piping below
+    if pipeCharacter:
+        for i in range(len(args)):
+            if args[i] == '|':
+                temp = args.split('|')
+                # Grab the two arguments
+                firstPart = temp[0]
+                secondPart = temp[1]
+
+                pr, pw = os.pipe()
+                for f in (pr, pw):
+                    os.set_inheritable(f, True)
+                #  print("pipe fds: pr=%d, pw=%d" % (pr, pw))
+                # print("About to fork (pid=%d)" % pid)
+
+                rk = os.fork()
+
+                if rk < 0:
+                    print("fork failed, returning %d\n" % rk, file=sys.stderr)
+                    sys.exit(1)
+
+                elif rk == 0:  # child - will write to pipe
+                    # print("Child: My pid==%d.  Parent's pid=%d" % (os.getpid(), pid), file=sys.stderr)
+                    os.close(1)  # redirect child's stdout
+                    os.dup(pw)
+                    for fd in (pr, pw):
+                        os.close(fd)
+                        for dir in re.split(":", os.environ['PATH']):  # try each directory in path
+                            program = "%s/%s" % (dir, next_input[0])
+                            # print(str(program))
+                            try:
+                                os.execve(program, args, os.environ) # try to exec program
+                            except FileNotFoundError:  # ...expected
+                                pass  # ...fail quietly
+
+                else:  # parent (forked ok)
+                    # os.wait()
+                    print("Parent: My pid==%d.  Child's pid=%d" % (os.getpid(), rk), file=sys.stderr)
+                    os.close(0)
+                    os.dup(pr)
+                    for fd in (pw, pr):
+                        os.close(fd)
+                    for line in fileinput.input():
+                        print("From child: <%s>" + str(line))

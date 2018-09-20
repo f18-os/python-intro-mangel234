@@ -1,2 +1,4 @@
-hello
-text
+[Sub@Wolvez]$ Sub_Shell.py
+kappa.txt
+test.txt
+[Sub@Wolvez]$ 
