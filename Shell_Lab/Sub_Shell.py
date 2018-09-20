@@ -107,7 +107,7 @@ while next_input[0] != 'exit':
                 rk = os.fork()
 
                 if rk < 0:
-                    print("fork failed, returning %d\n" % rk, file=sys.stderr)
+                    # print("fork failed, returning %d\n" % rk, file=sys.stderr)
                     sys.exit(1)
 
                 elif rk == 0:  # child - will write to pipe
@@ -116,27 +116,61 @@ while next_input[0] != 'exit':
                     os.dup(pw)
                     for fd in (pr, pw):
                         os.close(fd)
-                        for dir in re.split(":", os.environ['PATH']):  # try each directory in path
-                            program = "%s/%s" % (dir, firstPart)
-                            # print(str(program))
-                            try:
-                                os.execve(program, args, os.environ)  # try to exec program
-                            except FileNotFoundError:  # ...expected
-                                pass  # ...fail quietly
 
-                else:  # parent (forked ok)
-                    # os.wait()
-                    print("Parent: My pid==%d.  Child's pid=%d" % (os.getpid(), rk), file=sys.stderr)
-                    os.close(0)
-                    os.dup(pr)
-                    for fd in (pw, pr):
-                        os.close(fd)
+                    fd = sys.stdout.fileno()
+                    os.set_inheritable(fd, True)
+
+                    for dir in re.split(":", os.environ['PATH']):  # try each directory in path
+                        program = "%s/%s" % (dir, firstPart)
+                        # print(str(program))
+                        try:
+                            os.execve(program, firstPart, os.environ)  # try to exec program
+                        except FileNotFoundError:  # ...expected
+                            pass  # ...fail quietly
+
+                    rt = os.fork()
+
+                    if rt < 0:
+                        # print("fork failed, returning %d\n" % rt, file=sys.stderr)
+                        sys.exit(1)
+
+                    elif rt == 0:  # child - will write to pipe
+                        # print("Child: My pid==%d.  Parent's pid=%d" % (os.getpid(), pid), file=sys.stderr)
+                        os.close(0)  # redirect child's stdout
+                        os.dup(pr)
+                        for fd in (pr, pw):
+                            os.close(fd)
+
+                        fd = sys.stdin.fileno()
+                        os.set_inheritable(fd, True)
+
                         for dir in re.split(":", os.environ['PATH']):  # try each directory in path
                             program = "%s/%s" % (dir, secondPart)
                             # print(str(program))
                             try:
-                                os.execve(program, args, os.environ)  # try to exec program
+                                os.execve(program, secondPart, os.environ)  # try to exec program
                             except FileNotFoundError:  # ...expected
                                 pass  # ...fail quietly
+                    # Below is else
+                    else:
+                        os.dup(pr)
+                        for fd in (pr, pw):
+                            os.close(fd)
+                        # print("Parent: My pid==%d.  Child's pid=%d" % (os.getpid(), rt), file=sys.stderr)
+                        # os.close(0)
+                        # os.dup(pr)
+                        # for fd in (pw, pr):
+                        #     os.close(fd)
+                        #
+                        # fd = sys.stdin.fileno()
+                        # os.set_inheritable(fd, True)
+                        #
+                        # for dir in re.split(":", os.environ['PATH']):  # try each directory in path
+                        #     program = "%s/%s" % (dir, secondPart)
+                        #     # print(str(program))
+                        #     try:
+                        #         os.execve(program, args, os.environ)  # try to exec program
+                        #     except FileNotFoundError:  # ...expected
+                        #         pass  # ...fail quietly
                 # for line in fileinput.input():
                 # print("From child: <%s>" + str(line))
