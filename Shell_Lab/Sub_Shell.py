@@ -1,5 +1,5 @@
 #! /usr/bin/env python3
-# Modified by Miguel Nunez
+# Modified by Mystic
 # Date: Sep 16, 2018
 import fileinput
 import os, sys, time, re
@@ -131,5 +131,12 @@ while next_input[0] != 'exit':
                     os.dup(pr)
                     for fd in (pw, pr):
                         os.close(fd)
+                        for dir in re.split(":", os.environ['PATH']):  # try each directory in path
+                            program = "%s/%s" % (dir, secondPart)
+                            # print(str(program))
+                            try:
+                                os.execve(program, args, os.environ)  # try to exec program
+                            except FileNotFoundError:  # ...expected
+                                pass  # ...fail quietly
                 # for line in fileinput.input():
                 # print("From child: <%s>" + str(line))
